@@ -11,19 +11,16 @@ from Paged.paged_api import paged_api
 
 
 app = Flask(__name__)
-# 注册paged_api蓝图
+
 app.register_blueprint(paged_api)
 
-# 初始化数据
 generator = DataGenerator()
 data = generator.generate_all_data()
 
-# 初始化各个模块
 task_scheduler = TaskScheduler()
 customer_network = CustomerNetwork()
 product_index = ProductIndex()
 
-# 加载数据到各个模块
 for product in data["products"]:
     product_index.insert(Product(**product))
 
@@ -36,7 +33,6 @@ for relation in data["relations"]:
 for task in data["tasks"]:
     task_scheduler.insert(MarketingTask(**task))
 
-# 这里批量导入所有依赖
 for before_id, after_id in data["dependencies"]:
     task_scheduler.add_dependency(before_id, after_id)
 
@@ -185,7 +181,7 @@ def delete_customer(customer_id):
         return jsonify({"status": "error", "msg": "客户不存在"}), 404
     customer_network.customers.pop(customer_id)
     customer_network.adjacency_matrix.pop(customer_id, None)
-    # 删除所有与该客户相关的关系
+    # 删除所有客户关系
     customer_network.relations = [rel for rel in customer_network.relations if rel.from_customer != customer_id and rel.to_customer != customer_id]
     for adj in customer_network.adjacency_matrix.values():
         adj.pop(customer_id, None)
