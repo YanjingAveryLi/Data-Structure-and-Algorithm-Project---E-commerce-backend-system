@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>商品推荐网络可视化</title>
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    #network { width: 100%; height: 600px; border: 1px solid lightgray; }
+    #controls { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button onclick="loadTree('min')">相关性优先</button>
+    <button onclick="loadTree('max')">多样性优先</button>
+    <button onclick="loadTree('exact')">恰好k条蓝色边</button>
+    <input id="kValue" type="number" value="3" min="1" style="width:60px;">
+    <span id="blueCount"></span>
+  </div>
+  <div id="network"></div>
+  <script>
+    function loadTree(mode) {
+      let k = document.getElementById('kValue').value;
+      let body = { n: 20, mode: mode };
+      if (mode === 'exact') body.k = parseInt(k);
+      fetch('/api/recommend_tree', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      })
+      .then(res => res.json())
+      .then(data => {
+        drawNetwork(data.nodes, data.edges);
+        document.getElementById('blueCount').innerText = '蓝色边数量: ' + data.blue_count;
+      });
+    }
+
+    function drawNetwork(nodes, edges) {
+      const container = document.getElementById('network');
+      const data = {
+        nodes: new vis.DataSet(nodes.map(n => ({
+          id: n.id,
+          label: n.label,
+          title: n.title,
+          shape: 'image',
+          image: n.image,
+          group: n.category
+        }))),
+        edges: new vis.DataSet(edges.map(e => ({
+          from: e.from,
+          to: e.to,
+          color: { color: e.color, highlight: e.color },
+          width: e.width
+        })))
+      };
+      const options = {
+        nodes: {
+          shape: 'image',
+          size: 30,
+          font: { size: 14 }
+        },
+        edges: {
+          smooth: true
+        },
+        physics: {
+          stabilization: false
+        }
+      };
+      new vis.Network(container, data, options);
+    }
+
+    // 页面加载时默认显示相关性优先
+    window.onload = function() { loadTree('min'); };
+  </script>
+</body>
+</html>

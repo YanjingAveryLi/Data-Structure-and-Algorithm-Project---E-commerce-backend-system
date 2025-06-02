@@ -1,0 +1,131 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "label": "Estee Lauder Beauty Item 856",
+      "category": "Beauty",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Clinique",
+      "title": "Estee Lauder Beauty Item 856<br>价格: 452.87<br>品牌: Clinique"
+    },
+    {
+      "id": 1,
+      "label": "Bayer Health Item 237",
+      "category": "Health",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Merck",
+      "title": "Bayer Health Item 237<br>价格: 82.67<br>品牌: Merck"
+    },
+    {
+      "id": 2,
+      "label": "Honda Automotive Item 484",
+      "category": "Automotive",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Toyota",
+      "title": "Honda Automotive Item 484<br>价格: 789.72<br>品牌: Toyota"
+    },
+    {
+      "id": 3,
+      "label": "MAC Beauty Item 212",
+      "category": "Beauty",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Maybelline",
+      "title": "MAC Beauty Item 212<br>价格: 257.61<br>品牌: Maybelline"
+    },
+    {
+      "id": 4,
+      "label": "H&M Casual Shirt",
+      "category": "Clothing",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Zara",
+      "title": "H&M Casual Shirt<br>价格: 60.48<br>品牌: Zara"
+    },
+    {
+      "id": 5,
+      "label": "LEGO Toys Item 993",
+      "category": "Toys",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Fisher-Price",
+      "title": "LEGO Toys Item 993<br>价格: 462.46<br>品牌: Fisher-Price"
+    },
+    {
+      "id": 6,
+      "label": "Bvlgari Jewelry Item 121",
+      "category": "Jewelry",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Tiffany",
+      "title": "Bvlgari Jewelry Item 121<br>价格: 563.15<br>品牌: Tiffany"
+    },
+    {
+      "id": 7,
+      "label": "Puma Sports Item 944",
+      "category": "Sports",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Nike",
+      "title": "Puma Sports Item 944<br>价格: 428.31<br>品牌: Nike"
+    },
+    {
+      "id": 8,
+      "label": "Pfizer Health Item 494",
+      "category": "Health",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Merck",
+      "title": "Pfizer Health Item 494<br>价格: 123.78<br>品牌: Merck"
+    },
+    {
+      "id": 9,
+      "label": "Scholastic Books Item 680",
+      "category": "Books",
+      "image": "https://dummyimage.com/200x200/cccccc/000000&text=Simon & Schuster",
+      "title": "Scholastic Books Item 680<br>价格: 541.22<br>品牌: Simon & Schuster"
+    }
+  ],
+  "edges": [
+    {
+      "from": 8,
+      "to": 1,
+      "color": "red",
+      "width": 2
+    },
+    {
+      "from": 0,
+      "to": 3,
+      "color": "red",
+      "width": 2
+    },
+    {
+      "from": 8,
+      "to": 2,
+      "color": "blue",
+      "width": 1
+    },
+    {
+      "from": 7,
+      "to": 9,
+      "color": "blue",
+      "width": 1
+    },
+    {
+      "from": 7,
+      "to": 8,
+      "color": "blue",
+      "width": 1
+    },
+    {
+      "from": 6,
+      "to": 8,
+      "color": "blue",
+      "width": 1
+    },
+    {
+      "from": 5,
+      "to": 7,
+      "color": "blue",
+      "width": 1
+    },
+    {
+      "from": 4,
+      "to": 9,
+      "color": "blue",
+      "width": 1
+    },
+    {
+      "from": 3,
+      "to": 9,
+      "color": "blue",
+      "width": 1
+    }
+  ],
+  "blue_count": 7
+}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-4 mb-4">欢迎来到后台管理系统</h1>
+    <p>请选择左侧菜单进行操作。</p>
+
+    <!-- 快速数据图表（可选） -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">数据概览</h2>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card stat-card primary">
+                                <div class="card-body">
+                                    <h5 class="card-title">任务统计</h5>
+                                    <p>总任务数: {{ task_stats.total_tasks }}</p>
+                                    <p>已完成: {{ task_stats.completed_tasks }}</p>
+                                    <p>待处理: {{ task_stats.pending_tasks }}</p>
+                                    <p>完成率: {{ "%.1f"|format(task_stats.completion_rate * 100) }}%</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card stat-card success">
+                                <div class="card-body">
+                                    <h5 class="card-title">客户网络</h5>
+                                    <p>客户总数: {{ network_stats.total_customers }}</p>
+                                    <p>客户关系数: {{ network_stats.total_relations }}</p>
+                                    <p>平均关系数: {{ "%.2f"|format(network_stats.average_relations) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card stat-card warning">
+                                <div class="card-body">
+                                    <h5 class="card-title">商品统计</h5>
+                                    <p>商品总数: {{ product_stats.total_products }}</p>
+                                    <p>总库存: {{ product_stats.total_stock }}</p>
+                                    <p>平均价格: ${{ "%.2f"|format(product_stats.average_price) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="overviewChart" height="30"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

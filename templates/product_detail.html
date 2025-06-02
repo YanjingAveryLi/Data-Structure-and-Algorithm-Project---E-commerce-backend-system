@@ -1,0 +1,16 @@
+<div>
+    <h4>{{ product.name }}</h4>
+    <p><strong>ID：</strong> {{ product.id }}</p>
+    <p><strong>品牌：</strong> {{ product.brand }}</p>
+    <p><strong>类别：</strong> {{ product.category }}</p>
+    <p><strong>价格：</strong> {{ product.price }}</p>
+    <p><strong>状态：</strong> {{ product.status }}</p>
+    <p><strong>销量：</strong> {{ product.sales }}</p>
+    <p><strong>评分：</strong> {{ product.rating }}</p>
+    <p><strong>热度：</strong> {{ product.popularity }}</p>
+    <p><strong>库存：</strong> {{ product.stock }}</p>
+    <p><strong>描述：</strong> {{ product.description }}</p>
+    {% if product.image_url %}
+    <img src="{{ product.image_url }}" alt="商品图片" style="max-width: 100%; height: auto;">
+    {% endif %}
+</div>

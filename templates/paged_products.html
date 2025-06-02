@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}分页商品管理{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-4 mb-4">分页商品管理</h1>
+    <div class="row mb-3">
+        <div class="col-md-2">
+            <input type="text" class="form-control" id="pagedSearchInput" placeholder="商品名称前缀">
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="pagedCategorySelect">
+                <option value="">所有类别</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Books">Books</option>
+                <option value="Toys">Toys</option>
+                <!-- 可根据实际类别扩展 -->
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control" id="pagedMinPrice" placeholder="最低价格">
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control" id="pagedMaxPrice" placeholder="最高价格">
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="pagedSortBy">
+                <option value="paged_popularity">按热度排序</option>
+                <option value="paged_price">按价格排序</option>
+                <option value="paged_name">按名称排序</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-primary" onclick="paged_loadProducts(1)">搜索</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>名称</th>
+                        <th>类别</th>
+                        <th>价格</th>
+                        <th>热度</th>
+                        <th>库存</th>
+                        <th>状态</th>
+                        <th>销量</th>
+                        <th>评分</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="pagedProductTableBody"></tbody>
+            </table>
+            <nav>
+                <ul class="pagination" id="pagedPagination"></ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let paged_currentPage = 1;
+const paged_pageSize = 10;
+
+function paged_loadProducts(page) {
+    paged_currentPage = page;
+    const namePrefix = document.getElementById('pagedSearchInput').value.trim();
+    const category = document.getElementById('pagedCategorySelect').value;
+    const minPrice = document.getElementById('pagedMinPrice').value;
+    const maxPrice = document.getElementById('pagedMaxPrice').value;
+    const sortBy = document.getElementById('pagedSortBy').value;
+
+    let url = `/api/paged_products?page=${page}&page_size=${paged_pageSize}&sort_by=${sortBy}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    if (minPrice) url += `&min_price=${minPrice}`;
+    if (maxPrice) url += `&max_price=${maxPrice}`;
+    // 这里只做前缀筛选演示，实际可在后端实现前缀搜索
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            let products = data.products;
+            if (namePrefix) {
+                products = products.filter(p => p.paged_name.startsWith(namePrefix));
+            }
+            paged_renderProductTable(products);
+            paged_renderPagination(data.total, page, paged_pageSize);
+        });
+}
+
+function paged_renderProductTable(products) {
+    const tbody = document.getElementById('pagedProductTableBody');
+    tbody.innerHTML = products.map(p => `
+        <tr>
+            <td>${p.paged_id}</td>
+            <td>${p.paged_name}</td>
+            <td>${p.paged_category}</td>
+            <td>${p.paged_price}</td>
+            <td>${p.paged_popularity}</td>
+            <td>${p.paged_stock}</td>
+            <td>${p.paged_status}</td>
+            <td>${p.paged_sales}</td>
+            <td>${p.paged_rating}</td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="alert('商品ID: ${p.paged_id}')">详情</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function paged_renderPagination(total, current, pageSize) {
+    const totalPages = Math.ceil(total / pageSize);
+    const pagination = document.getElementById('pagedPagination');
+    let html = '';
+
+    html += `<li class="page-item${current === 1 ? ' disabled' : ''}">
+        <a class="page-link" href="#" onclick="paged_loadProducts(${current - 1})">上一页</a>
+    </li>`;
+    for (let i = 1; i <= totalPages; i++) {
+        html += `<li class="page-item${i === current ? ' active' : ''}">
+            <a class="page-link" href="#" onclick="paged_loadProducts(${i})">${i}</a>
+        </li>`;
+    }
+    html += `<li class="page-item${current === totalPages ? ' disabled' : ''}">
+        <a class="page-link" href="#" onclick="paged_loadProducts(${current + 1})">下一页</a>
+    </li>`;
+
+    pagination.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    paged_loadProducts(1);
+});
+</script>
+{% endblock %}

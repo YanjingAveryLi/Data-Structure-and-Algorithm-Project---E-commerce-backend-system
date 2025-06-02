@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% block title %}营销任务调度{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">营销任务调度</h1>
+    <div class="row mb-3">
+        <div class="col-md-2">
+            <input type="number" id="topkInput" class="form-control" min="1" value="10" placeholder="输入k">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary" onclick="loadTasks()">查看前k个任务</button>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-success" onclick="showAddTaskModal()">新增任务</button>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-warning" onclick="executeTask()">执行优先级最高的任务</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7">
+            <table class="table table-striped" id="taskTable">
+                <thead>
+                    <tr>
+                        <th>任务ID</th>
+                        <th>任务名称</th>
+                        <th>紧急度</th>
+                        <th>影响力</th>
+                        <th>优先级</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 动态填充 -->
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-5">
+            <h5>任务依赖关系图</h5>
+            <div id="task-graph" style="height: 400px; border: 1px solid #ddd; margin-bottom: 20px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增/编辑任务模态框 -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="taskForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="taskModalLabel">新增/编辑任务</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editTaskId" name="id">
+        <div class="mb-3">
+            <label for="taskName" class="form-label">任务名称</label>
+            <input type="text" class="form-control" id="taskName" name="name" required>
+        </div>
+        <div class="mb-3">
+            <label for="urgency" class="form-label">紧急度 (0-1)</label>
+            <input type="number" class="form-control" id="urgency" name="urgency" min="0" max="1" step="0.01" required>
+        </div>
+        <div class="mb-3">
+            <label for="influence" class="form-label">影响力 (0-1)</label>
+            <input type="number" class="form-control" id="influence" name="influence" min="0" max="1" step="0.01" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 添加依赖模态框 -->
+<div class="modal fade" id="depModal" tabindex="-1" aria-labelledby="depModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="depForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="depModalLabel">添加依赖</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="depAfterId" name="after_id">
+        <div class="mb-3">
+            <label for="depBeforeId" class="form-label">依赖的任务ID</label>
+            <input type="text" class="form-control" id="depBeforeId" name="before_id" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">添加依赖</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- vis-network -->
+<link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" />
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script>
+let editingTaskId = null;
+
+function loadTasks() {
+    const k = document.getElementById('topkInput').value || 10;
+    fetch(`/tasks/topk?k=${k}`)
+        .then(res => res.json())
+        .then(tasks => {
+            const tbody = document.querySelector('#taskTable tbody');
+            tbody.innerHTML = '';
+            tasks.forEach(task => {
+                tbody.innerHTML += `
+                <tr>
+                    <td>${task.id}</td>
+                    <td>${task.name}</td>
+                    <td>${task.urgency}</td>
+                    <td>${task.influence}</td>
+                    <td>${task.priority}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="showEditTaskModal('${task.id}', '${task.name}', ${task.urgency}, ${task.influence})">编辑</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteTask('${task.id}')">删除</button>
+                        <button class="btn btn-sm btn-secondary" onclick="showDepModal('${task.id}')">添加依赖</button>
+                    </td>
+                </tr>`;
+            });
+        });
+}
+
+function showAddTaskModal() {
+    editingTaskId = null;
+    document.getElementById('taskForm').reset();
+    document.getElementById('editTaskId').value = '';
+    new bootstrap.Modal(document.getElementById('taskModal')).show();
+}
+
+function showEditTaskModal(id, name, urgency, influence) {
+    editingTaskId = id;
+    document.getElementById('editTaskId').value = id;
+    document.getElementById('taskName').value = name;
+    document.getElementById('urgency').value = urgency;
+    document.getElementById('influence').value = influence;
+    new bootstrap.Modal(document.getElementById('taskModal')).show();
+}
+
+document.getElementById('taskForm').onsubmit = function(e) {
+    e.preventDefault();
+    const id = document.getElementById('editTaskId').value;
+    const name = document.getElementById('taskName').value;
+    const urgency = document.getElementById('urgency').value;
+    const influence = document.getElementById('influence').value;
+    if (id) {
+        // 修改
+        fetch(`/tasks/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, urgency, influence})
+        }).then(res => res.json()).then(() => {
+            loadTasks();
+            bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+            loadDag();
+        });
+    } else {
+        // 新增
+        fetch('/tasks', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                id: 'TASK' + Date.now(),
+                name, urgency, influence
+            })
+        }).then(res => res.json()).then(() => {
+            loadTasks();
+            bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+            loadDag();
+        });
+    }
+};
+
+function deleteTask(id) {
+    if (!confirm('确定要删除该任务吗？')) return;
+    fetch(`/tasks/${id}`, {method: 'DELETE'})
+        .then(res => res.json())
+        .then(() => {
+            loadTasks();
+            loadDag();
+        });
+}
+
+function showDepModal(after_id) {
+    document.getElementById('depAfterId').value = after_id;
+    document.getElementById('depBeforeId').value = '';
+    new bootstrap.Modal(document.getElementById('depModal')).show();
+}
+
+document.getElementById('depForm').onsubmit = function(e) {
+    e.preventDefault();
+    const after_id = document.getElementById('depAfterId').value;
+    const before_id = document.getElementById('depBeforeId').value;
+    fetch(`/tasks/${after_id}/dependencies`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({before_id})
+    }).then(res => res.json()).then(() => {
+        loadDag();
+        bootstrap.Modal.getInstance(document.getElementById('depModal')).hide();
+    });
+};
+
+function executeTask() {
+    fetch('/tasks/execute', {method: 'POST'})
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("已执行任务：" + data.executed_task.name);
+                loadTasks();
+                loadDag();
+            } else {
+                alert("没有可执行的任务！");
+            }
+        });
+}
+
+function loadDag() {
+    fetch('/tasks/dag')
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('task-graph');
+            const options = {
+                nodes: {
+                    shape: 'box',
+                    color: '#0d6efd',
+                    font: { color: '#fff', size: 16, face: 'Arial' }
+                },
+                edges: {
+                    arrows: 'to',
+                    color: '#aaa',
+                    smooth: true
+                },
+                layout: {
+                    hierarchical: {
+                        direction: 'UD',
+                        sortMethod: 'directed',
+                        nodeSpacing: 200,
+                        levelSeparation: 150
+                    }
+                },
+                physics: false
+            };
+            new vis.Network(container, data, options);
+        });
+}
+
+// 初始化
+loadTasks();
+loadDag();
+</script>
+{% endblock %}

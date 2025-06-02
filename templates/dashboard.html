@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}仪表板 - 数据结构与算法导论后台管理系统{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">仪表板</h1>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card stat-card primary">
+                <div class="card-body">
+                    <h5 class="card-title">任务统计</h5>
+                    <p>总任务数: {{ task_stats.total_tasks }}</p>
+                    <p>已完成: {{ task_stats.completed_tasks }}</p>
+                    <p>待处理: {{ task_stats.pending_tasks }}</p>
+                    <p>完成率: {{ "%.1f"|format(task_stats.completion_rate * 100) }}%</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card success">
+                <div class="card-body">
+                    <h5 class="card-title">客户网络</h5>
+                    <p>客户总数: {{ network_stats.total_customers }}</p>
+                    <p>客户关系数: {{ network_stats.total_relations }}</p>
+                    <p>平均关系数: {{ "%.2f"|format(network_stats.average_relations) }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card warning">
+                <div class="card-body">
+                    <h5 class="card-title">商品统计</h5>
+                    <p>商品总数: {{ product_stats.total_products }}</p>
+                    <p>总库存: {{ product_stats.total_stock }}</p>
+                    <p>平均价格: ${{ "%.2f"|format(product_stats.average_price) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}商品管理 - 后台管理系统{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">商品管理</h1>
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="searchForm" class="row g-3" onsubmit="event.preventDefault(); searchProducts();">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="searchInput" placeholder="输入商品名称..." autocomplete="off">
+                            <div id="searchSuggestions" class="list-group position-absolute" style="display: none; z-index: 1000; width: 100%;"></div>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="categorySelect">
+                                <option value="">所有类别</option>
+                                {% for category in categories %}
+                                <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control" id="minPrice" placeholder="最低价格">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control" id="maxPrice" placeholder="最高价格">
+                        </div>
+                        <div class="col-md-1">
+                            <select class="form-select" id="sortBy">
+                                <option value="popularity">按热度排序</option>
+                                <option value="price">按价格排序</option>
+                                <option value="name">按名称排序</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-grid">
+                            <button type="submit" class="btn btn-primary">搜索</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>名称</th>
+                                    <th>品牌</th>
+                                    <th>类别</th>
+                                    <th>价格</th>
+                                    <th>状态</th>
+                                    <th>销量</th>
+                                    <th>评分</th>
+                                    <th>热度</th>
+                                    <th>库存</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productTableBody">
+                                {% for product in products %}
+                                <tr>
+                                    <td>{{ product.id }}</td>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.brand }}</td>
+                                    <td>{{ product.category }}</td>
+                                    <td>{{ product.price }}</td>
+                                    <td>{{ product.status }}</td>
+                                    <td>{{ product.sales }}</td>
+                                    <td>{{ product.rating }}</td>
+                                    <td>{{ product.popularity }}</td>
+                                    <td>{{ product.stock }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="showProductDetail('{{ product.id }}')">详情</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 商品详情弹窗 -->
+<div class="modal fade" id="productDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">商品详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="productDetailContent">
+                <!-- 商品详情内容 -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 实时搜索建议
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    if (query.length < 2) {
+        document.getElementById('searchSuggestions').style.display = 'none';
+        return;
+    }
+    searchTimeout = setTimeout(() => {
+        fetch(`/products/search?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                const suggestions = document.getElementById('searchSuggestions');
+                suggestions.innerHTML = data.map(p => `
+                    <a href="#" class="list-group-item list-group-item-action" onclick="selectSuggestion('${p.name}')">
+                        ${p.name} - ${p.price}元
+                    </a>
+                `).join('');
+                suggestions.style.display = 'block';
+            });
+    }, 300);
+});
+
+// 选择搜索建议
+function selectSuggestion(name) {
+    document.getElementById('searchInput').value = name;
+    document.getElementById('searchSuggestions').style.display = 'none';
+    searchProducts();
+}
+
+// 搜索商品
+function searchProducts() {
+    const query = document.getElementById('searchInput').value.trim();
+    const category = document.getElementById('categorySelect').value;
+    const minPrice = document.getElementById('minPrice').value;
+    const maxPrice = document.getElementById('maxPrice').value;
+    const sortBy = document.getElementById('sortBy').value;
+    const url = `/products/search?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}&min_price=${minPrice}&max_price=${maxPrice}&sort_by=${sortBy}`;
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = data.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.brand || ''}</td>
+                    <td>${p.category}</td>
+                    <td>${p.price}</td>
+                    <td>${p.status || ''}</td>
+                    <td>${p.sales || 0}</td>
+                    <td>${p.rating || 0}</td>
+                    <td>${p.popularity}</td>
+                    <td>${p.stock}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="showProductDetail('${p.id}')">详情</button>
+                    </td>
+                </tr>
+            `).join('');
+        });
+}
+
+// 显示商品详情
+function showProductDetail(productId) {
+    fetch(`/products/${productId}`)
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById('productDetailContent').innerHTML = html;
+            new bootstrap.Modal(document.getElementById('productDetailModal')).show();
+        });
+}
+
+// 监听搜索条件变化
+document.getElementById('categorySelect').addEventListener('change', searchProducts);
+document.getElementById('minPrice').addEventListener('input', searchProducts);
+document.getElementById('maxPrice').addEventListener('input', searchProducts);
+document.getElementById('sortBy').addEventListener('change', searchProducts);
+</script>
+{% endblock %}

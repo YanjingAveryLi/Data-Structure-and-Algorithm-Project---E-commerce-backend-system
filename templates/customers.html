@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}客户网络 - 数据结构与算法导论后台管理系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">客户网络分析</h1>
+    <div class="row">
+        <div class="col-md-5">
+            <h5>客户列表</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>姓名</th>
+                        <th>类型</th>
+                        <th>性别</th>
+                        <th>年龄</th>
+                        <th>地区</th>
+                        <th>购买力</th>
+                        <th>活跃度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>{{ customer.id }}</td>
+                        <td>{{ customer.name }}</td>
+                        <td>{{ customer.type }}</td>
+                        <td>{{ customer.gender }}</td>
+                        <td>{{ customer.age }}</td>
+                        <td>{{ customer.region }}</td>
+                        <td>{{ customer.purchase_power }}</td>
+                        <td>{{ customer.activity_level }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h5 class="mt-4">客户分群</h5>
+            <ul class="list-group">
+                {% for seg, ids in segments.items() %}
+                <li class="list-group-item">
+                    {{ seg }}: {{ ids|length }}人
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-md-7">
+            <h5>客户网络图</h5>
+            <div id="customer-graph" style="height: 400px; border: 1px solid #ddd; margin-bottom: 20px;"></div>
+            <h5>影响力排行榜
+                <select id="importanceType" onchange="loadImportance()">
+                    <option value="pagerank">PageRank</option>
+                    <option value="degree">度中心性</option>
+                </select>
+            </h5>
+            <ul class="list-group" id="importanceList">
+                {% for cust_id, score in importance.items() %}
+                <li class="list-group-item">
+                    {{ cust_id }}: {{ "%.4f"|format(score) }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- vis-network -->
+<link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" />
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script>
+function loadGraph() {
+    fetch('/customers/graph')
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('customer-graph');
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 20,
+                    font: { size: 14, color: '#333' }
+                },
+                edges: {
+                    arrows: 'to',
+                    color: '#aaa',
+                    smooth: true,
+                    width: 2
+                },
+                layout: {
+                    improvedLayout: true
+                },
+                physics: {
+                    enabled: true,
+                    barnesHut: { gravitationalConstant: -30000 }
+                }
+            };
+            const network = new vis.Network(container, data, options);
+
+            // 点击节点高亮影响力传播
+            network.on("click", function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    fetch(`/customers/propagation?source_id=${nodeId}`)
+                        .then(res => res.json())
+                        .then(influenced => {
+                            // 高亮受影响节点
+                            const updateNodes = data.nodes.map(n => ({
+                                id: n.id,
+                                color: influenced.includes(n.id) ? '#ffc107' : '#0d6efd'
+                            }));
+                            network.body.data.nodes.update(updateNodes);
+                        });
+                }
+            });
+        });
+}
+
+function loadImportance() {
+    const type = document.getElementById('importanceType').value;
+    fetch(`/customers/${type === 'pagerank' ? 'pagerank' : 'centrality'}`)
+        .then(res => res.json())
+        .then(data => {
+            const list = document.getElementById('importanceList');
+            list.innerHTML = '';
+            // 排序显示
+            Object.entries(data).sort((a, b) => b[1] - a[1]).forEach(([cid, score]) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.textContent = `${cid}: ${score.toFixed(4)}`;
+                list.appendChild(li);
+            });
+        });
+}
+
+// 初始化
+loadGraph();
+</script>
+{% endblock %}
